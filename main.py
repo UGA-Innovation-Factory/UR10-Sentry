@@ -26,7 +26,7 @@ class CameraJoystick(threading.Thread):
     def run(self):
         while self.keep_running:
             bb = b.get_joystick_position_from_new_set_of_bboxes(q.get())
-            print(bb)
+            #print(bb)
             self.joystick_queue.put(bb)
 
     def stop(self):

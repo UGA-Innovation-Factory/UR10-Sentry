@@ -16,6 +16,7 @@ class BBoxProcessor:
         closest_box = self.get_box_closest_to_center(new_boxes)
         if closest_box is None:
             return [0, 0]
+        print("Closest box: ", closest_box, "All: ", new_boxes)
         return self.get_normalized_box_position(closest_box)
 
     def bbox_distance(self, box1: list, box2: list) -> float:
@@ -82,4 +83,4 @@ class BBoxProcessor:
         """
         Returns the normalized position of a bounding box, shringking its range from 0 to 1000 to 0 to 1
         """
-        return [(box[0] + box[2] / 2) / 500.0 - 1, (box[1] + box[3] / 2) / 500 - 1]
+        return [round((box[0] + box[2] / 2) / 500.0 - 1, 3), round((box[1] + box[3] / 2) / 500 - 1, 3)]

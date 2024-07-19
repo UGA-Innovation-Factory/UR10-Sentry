@@ -81,6 +81,7 @@ class URSentry:
 
         ticks_to_wait = 10
         if self.await_stop:
+            print("Awaiting stop --------------------")
             joint_speeds = self.robot.get_joint_speeds()
             if all([speed == 0 for speed in joint_speeds]):
                 self.await_stop_ticks += 1
@@ -90,6 +91,7 @@ class URSentry:
             return
 
         if self.send_to_zero_on_stop:
+            print("Sending to zero --------------------")
             self.await_stop = True
             self.send_to_zero_on_stop = False
             self.forward_position_to_base_angle_degrees(0)
@@ -111,8 +113,8 @@ class URSentry:
         vertical_dead_zone_radius = 0.1
 
         # Speeds for the base and neck joints
-        base_max_speed = 0.8
-        base_min_speed = 0.3
+        base_max_speed = 1.1
+        base_min_speed = 0.2
 
         base_acceleration = 1.5
 
@@ -154,7 +156,7 @@ class URSentry:
             )
             self.smooth_stop_delayed_call.start()
 
-        # print("Robot speed: ", self.robot_speed)
+        print("Robot speed: ", self.robot_speed)
         self.robot.speedj(self.robot_speed, base_acceleration, 1)
 
 
