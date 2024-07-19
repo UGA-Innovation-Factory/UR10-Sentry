@@ -14,7 +14,7 @@ class BBoxProcessor:
         """
         new_boxes = self.process_next(new_boxes)
         closest_box = self.get_box_closest_to_center(new_boxes)
-        if closest_box is None:
+        if closest_box == []:
             return [0, 0]
         print("Closest box: ", closest_box, "All: ", new_boxes)
         return self.get_normalized_box_position(closest_box)
@@ -49,7 +49,7 @@ class BBoxProcessor:
             closest = None
             for new_box in new_boxes:
                 new_distance = self.bbox_distance(box, new_box)
-                if new_distance < min_distance and new_distance < distance:
+                if (new_distance < min_distance and new_distance < distance):
                     distance = new_distance
                     closest = new_box
 
@@ -58,7 +58,7 @@ class BBoxProcessor:
                 and timestamp < self.last_timestamps[index] + time_to_live
             ):
                 new_boxes_list.append(box)
-                new_timestamps_list.append(timestamp)
+                new_timestamps_list.append(self.last_timestamps[index])
 
         self.last_boxes = new_boxes_list
         self.last_timestamps = new_timestamps_list

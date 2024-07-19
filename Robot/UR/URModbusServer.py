@@ -66,11 +66,10 @@ class URModbusServer:
         packet_signs = self.modbusTCP.read_holding_registers(320, quantity=6)
 
         if (packet is None) or (packet_signs is None):
-            time.sleep(0.01)
+            time.sleep(0.05)
             print(f"Modbus Error #{tries}: retrying")
             return self.get_joint_angles(tries+1)
         else:
-            #print(f"Packet: {packet_signs.hex()}")
             base = self._format_sign(packet[9:11], packet_signs[9:11])
             shoulder = self._format_sign(packet[11:13], packet_signs[11:13])
             elbow = self._format_sign(packet[13:15], packet_signs[13:15])
@@ -86,8 +85,8 @@ class URModbusServer:
 
     def get_joint_speeds(self, tries=0):
         """
-        Connects with the Modbus server to requests the speed of each joint, in radians
-        :return: Readable angle values of each joint in radials
+        Connects with the Modbus server to requests the speed of each joint, in radians per second
+        :return: Readable angle speeds of each joint in radians per second
         """
         if tries>10:
             print("Modbus Error: Failed")
@@ -96,11 +95,10 @@ class URModbusServer:
         packet = self.modbusTCP.read_holding_registers(280, quantity=6)
 
         if (packet is None):
-            time.sleep(0.01)
+            time.sleep(0.05)
             print(f"Modbus Error #{tries}: retrying")
             return self.get_joint_speeds(tries+1)
         else:
-            #print(f"Packet: {packet_signs.hex()}")
             base = self._format(packet[9:11]) / 1000
             shoulder = self._format(packet[11:13]) / 1000
             elbow = self._format(packet[13:15]) / 1000

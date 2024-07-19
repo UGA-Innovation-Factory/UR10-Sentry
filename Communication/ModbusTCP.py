@@ -205,19 +205,19 @@ class ModbusTCP:
 
         if mbap[0] != self.__transaction_id:
             print("Modbus: Transaction ID mismatch"
-                  "\n - Send: {} \n - Response: {}".format(self.__transaction_id, mbap[0]))
+                  "\t - Send: {} \t - Response: {}".format(self.__transaction_id, mbap[0]))
             return True
         elif mbap[1] != self.__protocol_id:
             print("Modbus: Protocol ID mismatch"
-                  "\n - Send: {} \n - Response: {}".format(self.__protocol_id, mbap[1]))
+                  "\t - Send: {} \t - Response: {}".format(self.__protocol_id, mbap[1]))
             return True
         elif mbap[3] != self.__unit_id:
             print("Modbus: Unit ID mismatch"
-                  "\n - Send: {} \n - Response: {}".format(self.__unit_id, mbap[3]))
+                  "\t - Send: {} \t - Response: {}".format(self.__unit_id, mbap[3]))
             return True
         elif mbap[2] != len(response[6:]):
             print("Modbus: Length mismatch"
-                  "\n - Length: {} \n - Remaining: {}".format(mbap[2], len(response[6:])))
+                  "\t - Length: {} \t - Remaining: {}".format(mbap[2], len(response[6:])))
             return True
 
         function_code = struct.unpack(">B", function_code)

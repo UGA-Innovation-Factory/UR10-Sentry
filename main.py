@@ -25,8 +25,13 @@ class CameraJoystick(threading.Thread):
 
     def run(self):
         while self.keep_running:
-            bb = b.get_joystick_position_from_new_set_of_bboxes(q.get())
+            q_val = []
+            try:
+                q_val = q.get_nowait()
+            except queue.Empty:
+                pass
             #print(bb)
+            bb = b.get_joystick_position_from_new_set_of_bboxes(q_val)
             self.joystick_queue.put(bb)
 
     def stop(self):
@@ -62,7 +67,7 @@ ur.forward_position()
 while True:
     try:
         ur.move_robot_base(-current_joystick[0])
-        print("Setting robot base velocity to: ", current_joystick[0])
+        #print("Setting robot base velocity to: ", current_joystick[0])
         time.sleep(0.2)
     except KeyboardInterrupt:
         camera_joystick.stop()
