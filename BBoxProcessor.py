@@ -15,7 +15,7 @@ class BBoxProcessor:
         new_boxes = self.process_next(new_boxes)
         closest_box = self.get_box_closest_to_center(new_boxes)
         if closest_box == []:
-            return [0, 0]
+            return None
         print("Closest box: ", closest_box, "All: ", new_boxes)
         return self.get_normalized_box_position(closest_box)
 

@@ -61,12 +61,11 @@ camera_joystick.start()
 joystick_scheduler = JoystickScheduler(joystick_queue)
 joystick_scheduler.start()
 
-ur.await_stop = True
-ur.forward_position()
+ur.initialize_pose()
 
 while True:
     try:
-        ur.move_robot_base(-current_joystick[0])
+        ur.control_robot(current_joystick)
         #print("Setting robot base velocity to: ", current_joystick[0])
         time.sleep(0.2)
     except KeyboardInterrupt:

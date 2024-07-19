@@ -66,7 +66,7 @@ class URModbusServer:
         packet_signs = self.modbusTCP.read_holding_registers(320, quantity=6)
 
         if (packet is None) or (packet_signs is None):
-            time.sleep(0.05)
+            time.sleep(0.01)
             print(f"Modbus Error #{tries}: retrying")
             return self.get_joint_angles(tries+1)
         else:
@@ -95,7 +95,7 @@ class URModbusServer:
         packet = self.modbusTCP.read_holding_registers(280, quantity=6)
 
         if (packet is None):
-            time.sleep(0.05)
+            time.sleep(0.01)
             print(f"Modbus Error #{tries}: retrying")
             return self.get_joint_speeds(tries+1)
         else:
