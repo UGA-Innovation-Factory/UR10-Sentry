@@ -60,6 +60,11 @@ ur.await_stop = True
 ur.forward_position()
 
 while True:
-    ur.move_robot_base(-current_joystick[0])
-    print("Setting robot base velocity to: ", current_joystick[0])
-    time.sleep(0.2)
+    try:
+        ur.move_robot_base(-current_joystick[0])
+        print("Setting robot base velocity to: ", current_joystick[0])
+        time.sleep(0.2)
+    except KeyboardInterrupt:
+        camera_joystick.stop()
+        joystick_scheduler.stop()
+        break
