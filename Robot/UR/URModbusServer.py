@@ -42,7 +42,7 @@ class URModbusServer:
 
         if packet is None:
             time.sleep(0.5)
-            print("Modbus Error: retrying")
+            print("[TCP] Modbus Error: retrying")
             return self.get_tcp_position()
         else:
             x = self._format(packet[9:11]) / 10
@@ -59,7 +59,7 @@ class URModbusServer:
         :return: Readable angle values of each joint in radials
         """
         if tries>10:
-            print("Modbus Error: Failed")
+            print("[Angles] Modbus Error: Failed")
             return 0, 0, 0, 0, 0, 0
 
         packet = self.modbusTCP.read_holding_registers(270, quantity=6)
@@ -67,7 +67,7 @@ class URModbusServer:
 
         if (packet is None) or (packet_signs is None):
             time.sleep(0.01)
-            print(f"Modbus Error #{tries}: retrying")
+            print(f"[Angles] Modbus Error: retrying")
             return self.get_joint_angles(tries+1)
         else:
             base = self._format_sign(packet[9:11], packet_signs[9:11])
@@ -89,14 +89,14 @@ class URModbusServer:
         :return: Readable angle speeds of each joint in radians per second
         """
         if tries>10:
-            print("Modbus Error: Failed")
+            print("[Speeds] Modbus Error: Failed")
             return 0, 0, 0, 0, 0, 0
 
         packet = self.modbusTCP.read_holding_registers(280, quantity=6)
 
         if (packet is None):
             time.sleep(0.01)
-            print(f"Modbus Error #{tries}: retrying")
+            print(f"[Speeds] Modbus Error: retrying")
             return self.get_joint_speeds(tries+1)
         else:
             base = self._format(packet[9:11]) / 1000

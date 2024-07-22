@@ -16,8 +16,10 @@ class BBoxProcessor:
         closest_box = self.get_box_closest_to_center(new_boxes)
         if closest_box == []:
             return None
-        print("Closest box: ", closest_box, "All: ", new_boxes)
-        return self.get_normalized_box_position(closest_box)
+        #print("Closest box: ", closest_box, "All: ", new_boxes)
+        joystick_position = self.get_normalized_box_position(closest_box)
+        #print("Joystick position: ", joystick_position)
+        return joystick_position
 
     def bbox_distance(self, box1: list, box2: list) -> float:
         """
@@ -66,13 +68,14 @@ class BBoxProcessor:
 
     def get_box_closest_to_center(self, box_list: list) -> list:
         """
-        Returns the BBox closest to the center (500, 500)
+        Returns the BBox closest to the biased center (500, 300)
         """
         closest = []
         closest_distance = 9999
         for box in box_list:
+            # Bias Y towards the top of the screen (use [500, 300] instead of the real center)
             distance = math.sqrt(
-                (box[0] + box[2] / 2 - 500) ** 2 + (box[1] + box[3] / 2 - 500) ** 2
+                (box[0] + box[2] / 2 - 500) ** 2 + (box[1] + box[3] / 2 - 300) ** 2
             )
             if distance < closest_distance:
                 closest = box
@@ -83,4 +86,7 @@ class BBoxProcessor:
         """
         Returns the normalized position of a bounding box, shringking its range from 0 to 1000 to 0 to 1
         """
-        return [round((box[0] + box[2] / 2) / 500.0 - 1, 3), round((box[1] + box[3] / 2) / 500 - 1, 3)]
+        #return [round((box[0] + box[2] / 2) / 500.0 - 1, 3), round((box[1] + box[3] / 2) / 500 - 1, 3)]
+
+        # Divide the height of the box by 3 to bias the Y joystick towards the head
+        return [round((box[0] + box[2] / 2) / 500.0 - 1, 3), round((box[1] + box[3] / 3) / 500 - 1, 3)]

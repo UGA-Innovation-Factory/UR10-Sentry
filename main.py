@@ -65,7 +65,7 @@ ur.initialize_pose()
 
 while True:
     try:
-        ur.control_robot(current_joystick)
+        ur.control_robot(current_joystick, 0.2)
         #print("Setting robot base velocity to: ", current_joystick[0])
         time.sleep(0.2)
     except KeyboardInterrupt:
