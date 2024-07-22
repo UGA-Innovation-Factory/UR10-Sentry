@@ -99,6 +99,7 @@ class URSentry:
             print("Sending to zero --------------------")
             self.await_stop = True
             self.send_to_zero_on_stop = False
+            self.has_detected_once = False
             self.forward_position_to_base_angle_degrees(0)
             return
 
