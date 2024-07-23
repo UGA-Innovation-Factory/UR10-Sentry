@@ -73,7 +73,7 @@ class BBoxProcessor:
         closest_distance = 9999
         for box in box_list:
             distance = math.sqrt(
-                (box[0] + box[2] / 2 - 500) ** 2 + (box[1] + box[3] / 2 - 500) ** 2
+                (box[0] + box[2] / 2 - 500) ** 2 + (box[1] + box[3] / 2 - 300) ** 2
             )
             if distance < closest_distance:
                 closest = box
@@ -84,4 +84,4 @@ class BBoxProcessor:
         """
         Returns the normalized position of a bounding box, shringking its range from 0 to 1000 to 0 to 1
         """
-        return [round((box[0] + box[2] / 2) / 500.0 - 1, 3), round((box[1] + box[3] / 2) / 500 - 1, 3)]
+        return [round((box[0] + box[2] / 2) / 500.0 - 1, 3), round((box[1] + box[3] / 3) / 500 - 1, 3)]

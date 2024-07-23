@@ -7,13 +7,16 @@ import threading
 class URSentry:
     def __init__(self, host):
         self.robot = URRobot(host)
-        self.sentry_pose = [-0.0, -2.094, 0.96, -0.436, -1.571, 1.318]
-        self.forward_pose = [1.571, -1.949, 1.974, -2.548, -1.571, 1.318]
-        self.imposing_pose = [1.571, -1.41, 1.411, -2.754, -1.604, 1.406]
+        self.sentry_pose = [-0.0, -2.094, 0.96, -0.436, -1.571, 1.326]
+        self.forward_pose = [1.571, -1.949, 1.974, -2.548, -1.571, 1.326]
+        self.imposing_pose = [1.571, -1.41, 1.411, -2.859, -1.604, 1.326]
+        self.looking_down_pose = [1.571, -2.3, 2.425, -2.452, -1.604, 1.326]
         self.robot_speed = [0, 0, 0, 0, 0, 0]
         self.detections = []
 
         # Flags
+        self.ESTOP = False
+
         self.await_stop = False
         self.await_stop_ticks = 0
 
@@ -36,7 +39,7 @@ class URSentry:
         """
         Get the current joint angles of the robot in degrees
         """
-        return self.robot.get_joint_angles_degrees()
+        return self.robot.get_joint_angles()
 
     def sentry_position(self, a=0.5, v=1.5):
         """
@@ -55,11 +58,11 @@ class URSentry:
         pose[0] = math.radians(base_angle)
         self.robot.movej(pose, a, v)
 
-    def set_base_speed(self, speed):
-        self.robot_speed[0] = speed
+    # def set_base_speed(self, speed):
+    #     self.robot_speed[0] = speed
 
-    def set_neck_speed(self, speed):
-        self.robot_speed[4] = speed
+    # def set_neck_speed(self, speed):
+    #     self.robot_speed[4] = speed
 
     def smooth_stop(self):
         # print("Smooth stopping --------------------")
@@ -73,7 +76,7 @@ class URSentry:
         """
         Control the robot based on a joystick input.
         """
-        print("Joystick pos: ", joystick_pos)
+        #print("Joystick pos: ", joystick_pos)
         # Check for flags that would block control due to things happening
 
         # Initialize robot if it hasn't already
@@ -125,7 +128,7 @@ class URSentry:
             self.has_detected_once = False
         else:
             # is on forward mode
-            self.move_robot_base(joystick_pos[0], joystick_pos[1])
+            self.move_robot_with_joystick(joystick_pos[0], joystick_pos[1])
             self.has_detected_once = True
             self.none_input_ticks = 0
 
@@ -139,11 +142,11 @@ class URSentry:
         print("Theta: ", theta_deg)
 
         self.await_stop = True
-        self.forward_position_to_base_angle_degrees(-theta_deg)
+        self.forward_position_to_base_angle_degrees(-theta_deg, 1.5, 0.8)
         self.is_on_sentry_mode = False
         
 
-    def move_robot_base(self, joystick_pos_x: float, joystick_pos_y: float = 0):
+    def move_robot_with_joystick(self, joystick_pos_x: float = 0, joystick_pos_y: float = 0):
         """
         Move the robot based on a joystick input,
         where the the center is (0, 0) and the bottom right corner is (1, 1).
@@ -185,11 +188,12 @@ class URSentry:
 
         # Deadzones where we still consider the target in the middle, to avoid jittering
         horizontal_dead_zone_radius = 0.1
-        vertical_dead_zone_radius = 0.1
+        vertical_dead_zone_radius = 0.01
 
         # Speeds for the base and neck joints
         base_max_speed = 1.5
         base_min_speed = 0.0
+        vertical_speed = 2.0
 
         base_acceleration = 1.5
 
@@ -197,22 +201,28 @@ class URSentry:
         base_max_angle = 315
         base_danger_angle = 340
 
+        movement_happened = False
+        current_pose = None
+        #### Horizontal movement ####
         if abs(joystick_pos_x) < horizontal_dead_zone_radius:
-            # We are in the deadzone, so we do not need to move the base, or stop moving it
-            if self.robot_speed[0] == 0:
-                return
-            self.set_base_speed(0)
+            # We are in the deadzone, so we stop moving it
+            if abs(joystick_pos_y) < vertical_dead_zone_radius:
+                # Both deadzones, so we check if the robot is already stopped. If it is, return and do nothing
+                if all([speed == 0 for speed in self.robot_speed]):
+                    return
+            self.robot_speed[0] = 0
 
         else:
+            movement_happened = True
             current_pose = self.get_joint_angles()
-            base_angle = current_pose[0]
+            base_angle = round(math.degrees(current_pose[0]), 3)
             # print("Base angle: ", base_angle)
             # Check if we are past the maximum angle
             if abs(base_angle) > base_max_angle:
                 # We are past the maximum angle, so we undo a rotation by sending to 0
                 self.send_to_zero_on_stop = True
                 self.await_stop = True
-                self.set_base_speed(0)
+                self.robot_speed[0] = 0
                 self.robot.speedj(self.robot_speed, base_acceleration, 1)
                 return
 
@@ -223,11 +233,33 @@ class URSentry:
                 self.lerp(base_min_speed, base_max_speed, abs(joystick_pos_x))
                 * direction
             )
-            self.set_base_speed(base_speed)
+            self.robot_speed[0] = base_speed
 
+        #### Vertical movement ####
+        if abs(joystick_pos_y) < vertical_dead_zone_radius:
+            # We are in the deadzone, so we stop moving it
+            self.robot_speed = [self.robot_speed[0], 0, 0, 0, 0, 0]
+        else:
+            if current_pose is None:
+                current_pose = self.get_joint_angles()
+            movement_happened = True
+            direction = math.copysign(1, joystick_pos_y) # 1 if looking down, -1 if looking up
+            joint_limit = self.looking_down_pose if direction > 0 else self.imposing_pose
+            #print("Joint limit: ", joint_limit, "Direction: ", direction) 
+            for i in range(1, 4):
+                joint_direction = math.copysign(1, self.looking_down_pose[i] - self.imposing_pose[i]) * direction
+                difference_from_limit = (joint_limit[i] - current_pose[i])
+                difference_from_limit = difference_from_limit if difference_from_limit * joint_direction > 0 else 0
+                self.robot_speed[i] = round(difference_from_limit * vertical_speed * abs(joystick_pos_y), 5)
+                print("Joint: ", i, " limit:", joint_limit[i], " current:" , current_pose[i] , " diff: ", difference_from_limit, " Speed: ", self.robot_speed[i])
+            print("")
+            #self.set_neck_speed(neck_speed)
+
+
+        if movement_happened:
             # Schedule smooth stop if no input is given for a second
             self.smooth_stop_delayed_call = threading.Timer(
-                0.4, self.move_robot_base, args=[0]
+                0.4, self.move_robot_with_joystick, args=[]
             )
             self.smooth_stop_delayed_call.start()
 
@@ -238,9 +270,11 @@ class URSentry:
 if __name__ == "__main__":
     host = "172.22.114.160"
     sentry = URSentry(host)
-    #sentry.sentry_position()
+    sentry.sentry_position()
     # sleep(3)
-    # sentry.forward_position()
+    #sentry.robot.movej(sentry.looking_down_pose, a=0.5, v=1.5)
+    #sleep(3)
+    #sentry.forward_position()
     # sleep(3)
     # sentry.robot.speedj([0.8, 0, 0, 0, 0, 0], 0.5, 3)
     # sleep(2)
