@@ -200,7 +200,7 @@ class URSentry:
 
         # Deadzones where we still consider the target in the middle, to avoid jittering
         horizontal_dead_zone_radius = 0.1
-        vertical_dead_zone_radius = 10.08
+        vertical_dead_zone_radius = 0.08
 
         # Speeds for the base and neck joints
         base_max_speed = 1.5

@@ -67,7 +67,7 @@ class URModbusServer:
 
         if (packet is None) or (packet_signs is None):
             time.sleep(0.01)
-            print(f"[Angles] Modbus Error: retrying")
+            print(f"[Angles] Modbus Error #{tries}: retrying")
             return self.get_joint_angles(tries+1)
         else:
             base = self._format_sign(packet[9:11], packet_signs[9:11])
@@ -96,7 +96,7 @@ class URModbusServer:
 
         if (packet is None):
             time.sleep(0.01)
-            print(f"[Speeds] Modbus Error: retrying")
+            print(f"[Speeds] Modbus Error#{tries}: retrying")
             return self.get_joint_speeds(tries+1)
         else:
             base = self._format(packet[9:11]) / 1000

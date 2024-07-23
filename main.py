@@ -24,15 +24,17 @@ class CameraJoystick(threading.Thread):
         self.keep_running = True
 
     def run(self):
+        global current_joystick
         while self.keep_running:
+            time.sleep(0.0001)
             q_val = []
             try:
                 q_val = q.get_nowait()
             except queue.Empty:
                 pass
             #print(bb)
-            bb = b.get_joystick_position_from_new_set_of_bboxes(q_val)
-            self.joystick_queue.put(bb)
+            current_joystick = b.get_joystick_position_from_new_set_of_bboxes(q_val)
+            #self.joystick_queue.put(bb)
 
     def stop(self):
         self.keep_running = False
@@ -58,8 +60,8 @@ class JoystickScheduler(threading.Thread):
 
 camera_joystick = CameraJoystick(joystick_queue)
 camera_joystick.start()
-joystick_scheduler = JoystickScheduler(joystick_queue)
-joystick_scheduler.start()
+# joystick_scheduler = JoystickScheduler(joystick_queue)
+# joystick_scheduler.start()
 
 ur.initialize_pose()
 
@@ -70,5 +72,5 @@ while True:
         time.sleep(0.2)
     except KeyboardInterrupt:
         camera_joystick.stop()
-        joystick_scheduler.stop()
+        # joystick_scheduler.stop()
         break
