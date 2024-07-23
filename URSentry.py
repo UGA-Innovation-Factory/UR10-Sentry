@@ -73,7 +73,7 @@ class URSentry:
         """
         Control the robot based on a joystick input.
         """
-
+        print("Joystick pos: ", joystick_pos)
         # Check for flags that would block control due to things happening
 
         # Initialize robot if it hasn't already
@@ -189,7 +189,7 @@ class URSentry:
 
         # Speeds for the base and neck joints
         base_max_speed = 1.5
-        base_min_speed = 0.1
+        base_min_speed = 0.0
 
         base_acceleration = 1.5
 

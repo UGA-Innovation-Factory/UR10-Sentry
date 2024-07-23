@@ -8,7 +8,7 @@ class BBoxProcessor:
         self.last_boxes = []
         self.last_timestamps = []
 
-    def get_joystick_position_from_new_set_of_bboxes(self, new_boxes: list) -> list:
+    def get_joystick_position_from_new_set_of_bboxes(self, new_boxes: list) -> list | None:
         """
         Given a set of bounding boxes, returns the joystick position that would move the robot to the closest one.
         """
@@ -16,7 +16,7 @@ class BBoxProcessor:
         closest_box = self.get_box_closest_to_center(new_boxes)
         if closest_box == []:
             return None
-        print("Closest box: ", closest_box, "All: ", new_boxes)
+        #print("Closest box: ", closest_box, "All: ", new_boxes)
         return self.get_normalized_box_position(closest_box)
 
     def bbox_distance(self, box1: list, box2: list) -> float:
@@ -42,7 +42,7 @@ class BBoxProcessor:
         for new_box in new_boxes:
             new_boxes_list.append(new_box)
             new_timestamps_list.append(timestamp)
-
+        # print("New boxes: ", new_boxes_list, end="")
         min_distance = dist_threshold
         for index, box in enumerate(self.last_boxes):
             distance = 9999
@@ -57,9 +57,10 @@ class BBoxProcessor:
                 closest is None
                 and timestamp < self.last_timestamps[index] + time_to_live
             ):
+                # print(" | Survivor: ", box, end="")
                 new_boxes_list.append(box)
                 new_timestamps_list.append(self.last_timestamps[index])
-
+        # print("")
         self.last_boxes = new_boxes_list
         self.last_timestamps = new_timestamps_list
         return new_boxes_list
