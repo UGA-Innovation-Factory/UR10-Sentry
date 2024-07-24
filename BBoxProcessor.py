@@ -73,7 +73,7 @@ class BBoxProcessor:
         closest_distance = 9999
         for box in box_list:
             distance = math.sqrt(
-                (box[0] + box[2] / 2 - 500) ** 2 + (box[1] + box[3] / 2 - 300) ** 2
+                (box[0] + box[2] / 2 - 500) ** 2 + (box[1] + box[3] / 2 - 400) ** 2
             )
             if distance < closest_distance:
                 closest = box

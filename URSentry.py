@@ -108,7 +108,7 @@ class URSentry:
 
         # If the joystick is None, we return to sentry mode after a certain amount of ticks
         # We only do this if we have detected something at least once, as the camera gets buggy after fast movements
-        ticks_for_return_to_sentry = 50
+        ticks_for_return_to_sentry = 150
         if joystick_pos is None:
             if self.has_detected_once and not self.is_on_sentry_mode:
                 self.none_input_ticks += 1
@@ -247,11 +247,13 @@ class URSentry:
             joint_limit = self.looking_down_pose if direction > 0 else self.imposing_pose
             #print("Joint limit: ", joint_limit, "Direction: ", direction) 
             for i in range(1, 4):
+                joint_difference = self.looking_down_pose[i] - self.imposing_pose[i]
                 joint_direction = math.copysign(1, self.looking_down_pose[i] - self.imposing_pose[i]) * direction
                 difference_from_limit = (joint_limit[i] - current_pose[i])
-                difference_from_limit = difference_from_limit if difference_from_limit * joint_direction > 0 else 0
-                self.robot_speed[i] = round(difference_from_limit * vertical_speed * abs(joystick_pos_y), 5)
-                print("Joint: ", i, " limit:", joint_limit[i], " current:" , current_pose[i] , " diff: ", difference_from_limit, " Speed: ", self.robot_speed[i])
+                # difference_from_limit = difference_from_limit if difference_from_limit * joint_direction > 0 else 0
+                # self.robot_speed[i] = round(difference_from_limit * vertical_speed * abs(joystick_pos_y), 5) 
+                self.robot_speed[i] = round(joint_difference * vertical_speed * joystick_pos_y * 0.3, 5) if difference_from_limit * joint_direction > 0 else 0
+                print("Joint: ", i, " limit:", joint_limit[i], " current:" , current_pose[i] , " reachedlimit: ", not (difference_from_limit * joint_direction > 0), " Speed: ", self.robot_speed[i])
             print("")
             #self.set_neck_speed(neck_speed)
 
