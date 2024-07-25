@@ -17,7 +17,7 @@ class URSentry:
         # Flags
         self.ESTOP = False
 
-        self.await_stop = False
+        self.await_stop = True
         self.await_stop_ticks = 0
 
         self.send_to_zero_on_stop = False
@@ -35,6 +35,7 @@ class URSentry:
         self.await_stop = True
         self.sentry_position()
         self.has_initialized = True
+        self.is_on_sentry_mode = True
 
     def get_joint_angles(self) -> "list[float]":
         """

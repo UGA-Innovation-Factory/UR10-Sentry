@@ -17,6 +17,6 @@ COPY BBoxProcessor.py .
 COPY URSentry.py .
 COPY dockermain.py .
 
-ENV UNIFI_PASSWORD = ''
+ENV UNIFI_PASSWORD=''
 
 CMD [ "python", "./dockermain.py" ]

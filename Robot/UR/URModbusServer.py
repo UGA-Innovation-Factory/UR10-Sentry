@@ -58,9 +58,9 @@ class URModbusServer:
         Connects with the Modbus server to requests the angles of each joint, in radians
         :return: Readable angle values of each joint in radials
         """
-        if tries>10:
-            print("[Angles] Modbus Error: Failed")
-            return 0, 0, 0, 0, 0, 0
+        if tries>50:
+            raise Exception("[Angles] Modbus Error: Failed")
+            #return 0, 0, 0, 0, 0, 0
 
         packet = self.modbusTCP.read_holding_registers(270, quantity=6)
         time.sleep(0.001)
@@ -89,9 +89,9 @@ class URModbusServer:
         Connects with the Modbus server to requests the speed of each joint, in radians per second
         :return: Readable angle speeds of each joint in radians per second
         """
-        if tries>10:
+        if tries>50:
             print("[Speeds] Modbus Error: Failed")
-            return 0, 0, 0, 0, 0, 0
+            #raise Exception("[Speeds] Modbus Error: Failed")
 
         packet = self.modbusTCP.read_holding_registers(280, quantity=6)
 
