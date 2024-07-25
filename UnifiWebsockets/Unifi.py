@@ -65,10 +65,10 @@ def find_coords(message: str) -> list[str]:
     return coords
 
 
-def run(q: queue.Queue) -> None:
+def run(q: queue.Queue, passwrd : str | None = None) -> None:
     base_url = "https://172.22.114.176"  # Replace with your UniFi Protect base URL
     username = "engr-ugaif"  # Replace with your username
-    password = dotenv.get_key(dotenv.find_dotenv(), "UNIFI_PASSWORD")
+    password = dotenv.get_key(dotenv.find_dotenv(), "UNIFI_PASSWORD") if passwrd is None else passwrd
     ws_url = "wss://172.22.114.176/proxy/protect/ws/liveDetectTrack?camera=668daa1e019ce603e4002d31"  # Replace with your WebSocket URL
 
     cookies = get_token(base_url, username, password)

@@ -4,10 +4,16 @@ import queue
 import time
 import threading
 import BBoxProcessor
+import os
+
+unifi_password = os.getenv('UNIFI_PASSWORD')
+if unifi_password == '':
+    print("Please set the 'UNIFI_PASSWORD' environment variable.")
+    exit(1)
 
 q = queue.Queue()
 
-x = threading.Thread(target=Unifi.run, args=(q,))
+x = threading.Thread(target=Unifi.run, args=(q,unifi_password))
 x.start()
 
 b = BBoxProcessor.BBoxProcessor()

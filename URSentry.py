@@ -34,6 +34,7 @@ class URSentry:
     def initialize_pose(self):
         self.await_stop = True
         self.sentry_position()
+        self.has_initialized = True
 
     def get_joint_angles(self) -> "list[float]":
         """
@@ -82,11 +83,10 @@ class URSentry:
         # Initialize robot if it hasn't already
         if not self.has_initialized:
             self.initialize_pose()
-            self.has_initialized = True
             return
 
         # If we are awaiting a stop, we do not control the robot until it remains at a standstill for a certain amount of ticks
-        ticks_to_wait = 3
+        ticks_to_wait = 6
         if self.await_stop:
             joint_speeds = self.robot.get_joint_speeds()
             print("Awaiting stop -------------------- speeds: ", joint_speeds)
@@ -108,7 +108,7 @@ class URSentry:
 
         # If the joystick is None, we return to sentry mode after a certain amount of ticks
         # We only do this if we have detected something at least once, as the camera gets buggy after fast movements
-        ticks_for_return_to_sentry = 150
+        ticks_for_return_to_sentry = 600
         if joystick_pos is None:
             if self.has_detected_once and not self.is_on_sentry_mode:
                 self.none_input_ticks += 1
@@ -187,7 +187,7 @@ class URSentry:
         # joystick_pos_y = -joystick_pos_y
 
         # Deadzones where we still consider the target in the middle, to avoid jittering
-        horizontal_dead_zone_radius = 0.1
+        horizontal_dead_zone_radius = 0.05
         vertical_dead_zone_radius = 0.01
 
         # Speeds for the base and neck joints
@@ -252,7 +252,7 @@ class URSentry:
                 difference_from_limit = (joint_limit[i] - current_pose[i])
                 # difference_from_limit = difference_from_limit if difference_from_limit * joint_direction > 0 else 0
                 # self.robot_speed[i] = round(difference_from_limit * vertical_speed * abs(joystick_pos_y), 5) 
-                self.robot_speed[i] = round(joint_difference * vertical_speed * joystick_pos_y * 0.3, 5) if difference_from_limit * joint_direction > 0 else 0
+                self.robot_speed[i] = round(joint_difference * vertical_speed * joystick_pos_y, 5) if difference_from_limit * joint_direction > 0 else 0
                 print("Joint: ", i, " limit:", joint_limit[i], " current:" , current_pose[i] , " reachedlimit: ", not (difference_from_limit * joint_direction > 0), " Speed: ", self.robot_speed[i])
             print("")
             #self.set_neck_speed(neck_speed)
