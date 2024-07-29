@@ -59,7 +59,7 @@ class URModbusServer:
         :return: Readable angle values of each joint in radials
         """
         if tries>50:
-            raise Exception("[Angles] Modbus Error: Failed")
+            raise ModbusError("[Angles] Modbus Error: Failed")
             #return 0, 0, 0, 0, 0, 0
 
         packet = self.modbusTCP.read_holding_registers(270, quantity=6)
@@ -90,8 +90,8 @@ class URModbusServer:
         :return: Readable angle speeds of each joint in radians per second
         """
         if tries>50:
-            print("[Speeds] Modbus Error: Failed")
-            #raise Exception("[Speeds] Modbus Error: Failed")
+            #print("[Speeds] Modbus Error: Failed")
+            raise ModbusError("[Speeds] Modbus Error: Failed")
 
         packet = self.modbusTCP.read_holding_registers(280, quantity=6)
 
@@ -160,3 +160,6 @@ class URModbusServer:
         else:
             d_f = round(d_f - math.radians(360), 3)
             return d_f
+        
+class ModbusError(Exception):
+    pass

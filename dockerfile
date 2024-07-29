@@ -19,4 +19,6 @@ COPY dockermain.py .
 
 ENV UNIFI_PASSWORD=''
 
+EXPOSE 502
+
 CMD [ "python", "./dockermain.py" ]

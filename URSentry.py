@@ -2,15 +2,16 @@ from Robot.UR.URRobot import URRobot
 from time import sleep
 import math
 import threading
-
+from Robot.UR.URModbusServer import ModbusError
 
 class URSentry:
     def __init__(self, host):
         self.robot = URRobot(host)
-        self.sentry_pose = [-0.0, -2.094, 0.96, -0.436, -1.571, 1.326]
-        self.forward_pose = [1.571, -1.949, 1.974, -2.548, -1.571, 1.326]
+        self.sentry_pose = [0.785, -2.094, 0.96, -0.436, -1.571, 1.326]
+        #self.forward_pose = [1.571, -1.949, 1.974, -2.548, -1.571, 1.326]
         self.imposing_pose = [1.571, -1.41, 1.411, -2.859, -1.604, 1.326]
-        self.looking_down_pose = [1.571, -2.3, 2.425, -2.452, -1.604, 1.326]
+        self.looking_down_pose = [1.571, -2.3, 2.323, -2.452, -1.604, 1.326]
+        self.middle_point_pose = [(self.imposing_pose[i] + self.looking_down_pose[i]) / 2 for i in range(6)]
         self.robot_speed = [0, 0, 0, 0, 0, 0]
         self.detections = []
 
@@ -30,6 +31,24 @@ class URSentry:
 
         # Smooth stopping
         self.smooth_stop_delayed_call = None
+
+        self.modbus_healthy = self.Modbus_check()
+
+    def Modbus_check(self):
+        try:
+            self.robot.get_joint_angles()
+            self.robot.get_joint_speeds()
+        except KeyboardInterrupt as ki:
+            raise ki
+        except:
+            print("########################################################")
+            print("####            MODBUS HEALTHCHECK FAILED           ####")
+            print("########################################################")
+            return False
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print("~~~~            MODBUS HEALTHCHECK PASSED           ~~~~")
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        return True
 
     def initialize_pose(self):
         self.await_stop = True
@@ -56,7 +75,7 @@ class URSentry:
         self.detections = detections
 
     def forward_position_to_base_angle_degrees(self, base_angle, a=0.5, v=1.5):
-        pose = self.imposing_pose
+        pose = self.middle_point_pose.copy()
         pose[0] = math.radians(base_angle)
         self.robot.movej(pose, a, v)
 
@@ -67,8 +86,9 @@ class URSentry:
     #     self.robot_speed[4] = speed
 
     def smooth_stop(self):
-        # print("Smooth stopping --------------------")
+        self.robot_speed = [0, 0, 0, 0, 0, 0]
         self.robot.speedj([0, 0, 0, 0, 0, 0], 1.5)
+        print("xxxxxxxxx Smooth stopping xxxxxxxxx")
 
     def lerp(self, a, b, t):
         return a + t * (b - a)
@@ -82,56 +102,72 @@ class URSentry:
         # Check for flags that would block control due to things happening
 
         # Initialize robot if it hasn't already
-        if not self.has_initialized:
-            self.initialize_pose()
+        if not self.modbus_healthy:
+            self.modbus_healthy = self.Modbus_check()
             return
 
-        # If we are awaiting a stop, we do not control the robot until it remains at a standstill for a certain amount of ticks
-        ticks_to_wait = 6
-        if self.await_stop:
-            joint_speeds = self.robot.get_joint_speeds()
-            print("Awaiting stop -------------------- speeds: ", joint_speeds)
-            if all([speed == 0 for speed in joint_speeds]):
-                self.await_stop_ticks += 1
-                if self.await_stop_ticks >= ticks_to_wait:
-                    self.await_stop = False
-                    self.await_stop_ticks = 0
+        try:
+
+            if not self.has_initialized:
+                self.initialize_pose()
+                return
+
+            # If we are awaiting a stop, we do not control the robot until it remains at a standstill for a certain amount of ticks
+            ticks_to_wait = 6
+            if self.await_stop:
+                joint_speeds = self.robot.get_joint_speeds()
+                print("Awaiting stop -------------------- speeds: ", joint_speeds)
+                if all([speed == 0 for speed in joint_speeds]):
+                    self.await_stop_ticks += 1
+                    if self.await_stop_ticks >= ticks_to_wait:
+                        self.await_stop = False
+                        self.await_stop_ticks = 0
+                return
+
+            # If we are awaiting a stop to send to zero, we do so right after it passes the await_stop check
+            if self.send_to_zero_on_stop:
+                print("Sending to zero ~~~~~~~~~~~~~~~~~~~~~~~~")	
+                self.await_stop = True
+                self.send_to_zero_on_stop = False
+                self.has_detected_once = False
+                self.forward_position_to_base_angle_degrees(0)
+                return
+
+            # If the joystick is None, we return to sentry mode after a certain amount of ticks
+            # We only do this if we have detected something at least once, as the camera gets buggy after fast movements
+            if joystick_pos is None:
+                if not self.is_on_sentry_mode:
+                    ticks_for_return_to_sentry = 600 if self.has_detected_once else 3000
+                    self.none_input_ticks += 1
+                    print("None input ticks: ", self.none_input_ticks, " / ", ticks_for_return_to_sentry)
+                    if self.none_input_ticks > ticks_for_return_to_sentry:
+                        self.none_input_ticks = 0
+                        self.is_on_sentry_mode = True
+                        self.await_stop = True
+                        self.sentry_position()
+                    else:
+                        self.move_robot_with_joystick(0, 0)
+                return
+
+            # If we have detected something, we reset the none input ticks
+
+            # If all flags are clear, we can control the robot
+            if self.is_on_sentry_mode:
+                self.awake_from_sentry_mode(joystick_pos[0], joystick_pos[1])
+                self.has_detected_once = False
+            else:
+                # is on forward mode
+                self.move_robot_with_joystick(joystick_pos[0], joystick_pos[1])
+                self.has_detected_once = True
+                self.none_input_ticks = 0
+        except ModbusError as me:
+            print("[Modbus error]: ", me)
+            self.modbus_healthy = False
+            try:
+                self.smooth_stop()
+            except:
+                pass
             return
-
-        # If we are awaiting a stop to send to zero, we do so right after it passes the await_stop check
-        if self.send_to_zero_on_stop:
-            print("Sending to zero --------------------")
-            self.await_stop = True
-            self.send_to_zero_on_stop = False
-            self.has_detected_once = False
-            self.forward_position_to_base_angle_degrees(0)
-            return
-
-        # If the joystick is None, we return to sentry mode after a certain amount of ticks
-        # We only do this if we have detected something at least once, as the camera gets buggy after fast movements
-        ticks_for_return_to_sentry = 600
-        if joystick_pos is None:
-            if self.has_detected_once and not self.is_on_sentry_mode:
-                self.none_input_ticks += 1
-                print("None input ticks: ", self.none_input_ticks, " / ", ticks_for_return_to_sentry)
-                if self.none_input_ticks > ticks_for_return_to_sentry:
-                    self.none_input_ticks = 0
-                    self.is_on_sentry_mode = True
-                    self.await_stop = True
-                    self.sentry_position()
-            return
-
-        # If we have detected something, we reset the none input ticks
-
-        # If all flags are clear, we can control the robot
-        if self.is_on_sentry_mode:
-            self.awake_from_sentry_mode(joystick_pos[0], joystick_pos[1])
-            self.has_detected_once = False
-        else:
-            # is on forward mode
-            self.move_robot_with_joystick(joystick_pos[0], joystick_pos[1])
-            self.has_detected_once = True
-            self.none_input_ticks = 0
 
 
     def awake_from_sentry_mode(self, joystick_pos_x: float, joystick_pos_y: float):
@@ -139,7 +175,7 @@ class URSentry:
             return
 
         theta_rad = math.atan2(joystick_pos_x, -joystick_pos_y)
-        theta_deg = math.degrees(theta_rad)
+        theta_deg = math.degrees(theta_rad) - 45
         print("Theta: ", theta_deg)
 
         self.await_stop = True
@@ -168,8 +204,12 @@ class URSentry:
         If flag await_stop is set True, we check if the current speed is 0 wait until all joints are stopped before moving again.
 
         """
-
+        # Reverse the x axis
         joystick_pos_x = -joystick_pos_x
+
+        # Limit the y axis between +-0.5 to prevent speeding down too fast
+        joystick_pos_y = max(-0.5, min(0.5, joystick_pos_y))
+
         # We omit all processing until the robot has stopped moving for a certain amount of calls ('ticks')
 
         # print("Base Speed: ", self.robot_speed[0])
@@ -223,8 +263,9 @@ class URSentry:
                 # We are past the maximum angle, so we undo a rotation by sending to 0
                 self.send_to_zero_on_stop = True
                 self.await_stop = True
-                self.robot_speed[0] = 0
-                self.robot.speedj(self.robot_speed, base_acceleration, 1)
+                self.smooth_stop()
+                # self.robot_speed[0] = 0
+                # self.robot.speedj(self.robot_speed, base_acceleration, 1)
                 return
 
             # We are not in the deadzone, so we need to move the base
@@ -273,7 +314,7 @@ class URSentry:
 if __name__ == "__main__":
     host = "172.22.114.160"
     sentry = URSentry(host)
-    sentry.sentry_position()
+    #sentry.sentry_position()
     # sleep(3)
     #sentry.robot.movej(sentry.looking_down_pose, a=0.5, v=1.5)
     #sleep(3)
