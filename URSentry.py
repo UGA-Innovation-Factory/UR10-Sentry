@@ -40,7 +40,8 @@ class URSentry:
             self.robot.get_joint_speeds()
         except KeyboardInterrupt as ki:
             raise ki
-        except:
+        except Exception as e:
+            print(e)
             print("########################################################")
             print("####            MODBUS HEALTHCHECK FAILED           ####")
             print("########################################################")
@@ -314,7 +315,7 @@ class URSentry:
 if __name__ == "__main__":
     host = "172.22.114.160"
     sentry = URSentry(host)
-    #sentry.sentry_position()
+    sentry.sentry_position()
     # sleep(3)
     #sentry.robot.movej(sentry.looking_down_pose, a=0.5, v=1.5)
     #sleep(3)
