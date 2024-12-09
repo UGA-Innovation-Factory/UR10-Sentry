@@ -5,7 +5,7 @@
 - UR10's IP address is hardcoded into `main.py` and `dockermain.py`. Needs to be manualy changed (or rewrite the code so its a env variable instead).
 - The UR10 needs enough clearance, as it spins around alot and **WILL** hit things or people otherwise.
 
-### UNIFI_PASSWORD
+
 
 - **For Docker:** 
     - `UNIFI_PASSWORD` must be set as an environment variable
