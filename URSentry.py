@@ -327,7 +327,7 @@ if __name__ == "__main__":
     # sleep(2)
     # sentry.forward_position_to_base_angle_degrees(45)
 
-    print(sentry.robot.get_joint_angles())
+    #print(sentry.robot.get_joint_angles())
 
     # while True:
     #     print(sentry.robot.get_joint_speeds()[0])

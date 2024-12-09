@@ -1,6 +1,6 @@
 FROM python:3.12
 
-LABEL maintainer="Tomas Letelier"
+LABEL maintainer="Tomas Arturo Letelier Zamora"
 
 WORKDIR /usr/src/app
 
